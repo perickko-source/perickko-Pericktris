@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Pericktris</title>
+    <style>
+        body {
+            background-color: #1a1a2e;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            color: #eee;
+        }
+        .game-wrapper {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+        .side-panel {
+            background: #16213e;
+            padding: 25px 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            width: 180px;
+            text-align: center;
+        }
+        
+        /* Logo del juego */
+        .game-logo {
+            font-size: 26px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #00f0f0, #a000f0, #f0a000);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+            animation: glow 2s ease-in-out infinite;
+            white-space: nowrap;
+        }
+        
+        @keyframes glow {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.3); }
+        }
+        
+        .side-panel h2 { margin: 12px 0 5px 0; font-size: 16px; color: #e94560; }
+        .side-panel p { margin: 0; font-size: 22px; font-weight: bold; color: #fff; }
+        .side-panel h3 { margin-top: 20px; color: #0f3460; background: #e94560; padding: 5px; border-radius: 5px; }
+        
+        .mascot {
+            margin-top: 20px;
+            font-size: 55px;
+            transition: transform 0.3s ease;
+            display: inline-block;
+        }
+        .mascot.happy { animation: bounce 0.5s ease; }
+        .mascot.celebrating { animation: celebrate 0.8s ease; }
+        .mascot.scared { animation: shake 0.3s ease infinite; }
+        .mascot.sweating { animation: sweat 1s ease infinite; }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        @keyframes celebrate {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.3) rotate(-10deg); }
+            75% { transform: scale(1.3) rotate(10deg); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        @keyframes sweat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(3px); }
+        }
+        
+        .level-bar-container {
+            margin-top: 10px;
+            background: #0a0a1a;
+            border: 2px solid #0f3460;
+            border-radius: 5px;
+            height: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+        .level-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #00f0f0, #a000f0);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .level-bar.exploding { animation: explode 0.5s ease-out; }
+        @keyframes explode {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); background: #fff; }
+            100% { transform: scale(1); }
+        }
+        
+        .combo-counter {
+            margin-top: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #f0a000;
+            min-height: 30px;
+            transition: transform 0.2s;
+        }
+        .combo-counter.active { animation: pulse 0.3s ease; }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+        }
+        
+        .canvas-container { position: relative; }
+
+        canvas {
+            border: 4px solid #0f3460;
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.3);
+            background-color: #0a0a1a;
+            display: block;
+        }
+        #next {
+            border: 2px solid #0f3460;
+            margin-top: 10px;
+            background: #0a0a1a;
+        }
+        
+        .restart-btn {
+            display: none;
+            position: absolute;
+            top: 65%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 30px;
+            font-size: 18px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #fff;
+            background: #e94560;
+            border: 3px solid #fff;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            z-index: 10;
+            transition: transform 0.1s, background 0.2s;
+        }
+        .restart-btn:hover {
+            background: #ff6b81;
+            transform: translateX(-50%) scale(1.05);
+        }
+
+        .music-control {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #0f3460;
+            background: #e94560;
+            padding: 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .music-control:hover { background: #ff6b81; }
+        .music-control.muted { background: #555; color: #aaa; }
+        
+        .controls {
+            margin-top: 20px;
+            font-size: 11px;
+            color: #888;
+            text-align: left;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-wrapper">
+    <div class="side-panel">
+        <div class="game-logo">PERICKTRIS</div>
+        
+        <h2>SCORE</h2>
+        <p id="score">0</p>
+        <h2>LEVEL</h2>
+        <p id="level">1</p>
+        <div class="level-bar-container">
+            <div class="level-bar" id="levelBar"></div>
+        </div>
+        <div class="combo-counter" id="comboCounter"></div>
+        <h2>LINES</h2>
+        <p id="lines">0</p>
+        <h3>NEXT</h3>
+        <canvas id="next" width="140" height="100"></canvas>
+        <div class="mascot" id="mascot">😊</div>
+        <div class="music-control" id="musicToggle"> Música: ON</div>
+        <div class="controls">
+            <strong>CONTROLES:</strong><br>
+            ← → Mover<br>
+            ↓ Bajar<br>
+            ↑ Rotar<br>
+            ESPACIO: Hard Drop<br>
+            M: Música ON/OFF<br>
+            R: Reiniciar
+        </div>
+    </div>
+    
+    <div class="canvas-container">
+        <canvas id="game" width="300" height="600"></canvas>
+        <button id="restartBtn" class="restart-btn">🔄 Jugar de Nuevo</button>
+    </div>
+</div>
+
+<audio id="bgm" loop>
+    <source src="tetris.ogg" type="audio/ogg">
+</audio>
+
+<script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const nextCanvas = document.getElementById('next');
+    const nctx = nextCanvas.getContext('2d');
+    const bgm = document.getElementById('bgm');
+    const musicToggle = document.getElementById('musicToggle');
+    const restartBtn = document.getElementById('restartBtn');
+    const levelBar = document.getElementById('levelBar');
+    const comboCounter = document.getElementById('comboCounter');
+    const mascot = document.getElementById('mascot');
+    
+    const BLOCK_SIZE = 30;
+    const COLS = 10;
+    const ROWS = 20;
+
+    const COLORS = ['transparent', '#00f0f0', '#f0f000', '#a000f0', '#00f000', '#f00000', '#0000f0', '#f0a000'];
+    const SHAPES = [
+        [[1,1,1,1]], [[2,2],[2,2]], [[0,3,0],[3,3,3]], [[0,4,4],[4,4,0]],
+        [[5,5,0],[0,5,5]], [[6,0,0],[6,6,6]], [[0,0,7],[7,7,7]]
+    ];
+
+    let board = [];
+    let piece, nextPiece, posX, posY;
+    let dropCounter = 0, dropInterval = 1000, lastTime = 0;
+    let gameOver = false;
+    
+    let score = 0, level = 1, lines = 0;
+    let particles = [];
+    let audioCtx;
+    let musicEnabled = true;
+    
+    let floatingMessages = [];
+    let comboCount = 0;
+    let linesUntilNextLevel = 10;
+    
+    let mascotState = 'normal';
+    let mascotTimer = null;
+    
+    let trails = [];
+    let playerInputDrop = false; // NUEVO: solo true cuando el jugador presiona ↓ o ESPACIO
+
+    function initAudio() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    function playSound(freq, type, duration, volume = 0.1) {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    }
+
+    function playClearSound(linesCleared) {
+        if (!audioCtx) return;
+        const baseFreq = 400 + (linesCleared * 100);
+        [baseFreq, baseFreq + 100, baseFreq + 200, baseFreq + 400].forEach((f, i) => {
+            setTimeout(() => playSound(f, 'square', 0.1, 0.08), i * 50);
+        });
+    }
+
+    function toggleMusic() {
+        musicEnabled = !musicEnabled;
+        if (musicEnabled && !gameOver) {
+            bgm.play().catch(e => console.log("Error al reproducir música:", e));
+            musicToggle.textContent = "🎵 Música: ON";
+            musicToggle.classList.remove('muted');
+        } else {
+            bgm.pause();
+            musicToggle.textContent = "🔇 Música: OFF";
+            musicToggle.classList.add('muted');
+        }
+    }
+
+    function setMascotState(state, duration = null) {
+        if (mascotTimer) {
+            clearTimeout(mascotTimer);
+            mascotTimer = null;
+        }
+        
+        mascotState = state;
+        mascot.className = 'mascot';
+        
+        switch(state) {
+            case 'normal':
+                mascot.textContent = '😊';
+                break;
+            case 'happy':
+                mascot.textContent = '😄';
+                mascot.classList.add('happy');
+                if (duration) {
+                    mascotTimer = setTimeout(() => setMascotState('normal'), duration);
+                }
+                break;
+            case 'celebrating':
+                mascot.textContent = '';
+                mascot.classList.add('celebrating');
+                if (duration) {
+                    mascotTimer = setTimeout(() => setMascotState('normal'), duration);
+                }
+                break;
+            case 'scared':
+                mascot.textContent = '😱';
+                mascot.classList.add('scared');
+                break;
+            case 'sweating':
+                mascot.textContent = '😰';
+                mascot.classList.add('sweating');
+                break;
+        }
+    }
+
+    function checkMascotState() {
+        if (gameOver) return;
+        
+        let filledBlocks = 0;
+        let highestBlock = ROWS;
+        
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                if (board[y][x] !== 0) {
+                    filledBlocks++;
+                    if (y < highestBlock) highestBlock = y;
+                }
+            }
+        }
+        
+        const fillPercentage = filledBlocks / (ROWS * COLS);
+        
+        if (highestBlock <= 3) {
+            if (mascotState !== 'scared' && mascotState !== 'celebrating' && mascotState !== 'happy') {
+                setMascotState('scared');
+            }
+        } else if (fillPercentage > 0.7) {
+            if (mascotState !== 'sweating' && mascotState !== 'celebrating' && mascotState !== 'happy') {
+                setMascotState('sweating');
+            }
+        } else if (mascotState === 'scared' || mascotState === 'sweating') {
+            setMascotState('normal');
+        }
+    }
+
+    function spawnParticles(rowY) {
+        for (let i = 0; i < 40; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: rowY * BLOCK_SIZE + BLOCK_SIZE / 2,
+                vx: (Math.random() - 0.5) * 12,
+                vy: (Math.random() - 0.5) * 10 - 5,
+                color: COLORS[Math.floor(Math.random() * (COLORS.length - 1)) + 1],
+                life: 60,
+                size: Math.random() * 5 + 2
+            });
+        }
+    }
+
+    function updateParticles() {
+        particles.forEach(p => {
+            p.x += p.vx; p.y += p.vy; p.vy += 0.5; p.life--;
+        });
+        particles = particles.filter(p => p.life > 0);
+    }
+
+    function drawParticles() {
+        particles.forEach(p => {
+            ctx.globalAlpha = p.life / 60;
+            ctx.fillStyle = p.color;
+            ctx.fillRect(p.x, p.y, p.size, p.size);
+        });
+        ctx.globalAlpha = 1;
+    }
+
+    // --- ESTELA: solo se activa con input del jugador ---
+    function addTrail() {
+        if (!playerInputDrop) return; // CORRECCIÓN: solo si el jugador presionó ↓ o ESPACIO
+        
+        piece.forEach((row, y) => {
+            row.forEach((color, x) => {
+                if (color !== 0) {
+                    trails.push({
+                        x: posX + x,
+                        y: posY + y,
+                        color: COLORS[color],
+                        life: 30,
+                        maxLife: 30
+                    });
+                }
+            });
+        });
+    }
+
+    function updateTrails() {
+        trails.forEach(trail => {
+            trail.life--;
+        });
+        trails = trails.filter(trail => trail.life > 0);
+    }
+
+    function drawTrails() {
+        trails.forEach(trail => {
+            const lifeRatio = trail.life / trail.maxLife;
+            const alpha = lifeRatio * 0.7;
+            
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.shadowColor = trail.color;
+            ctx.shadowBlur = 10;
+            
+            ctx.fillStyle = trail.color;
+            ctx.fillRect(
+                trail.x * BLOCK_SIZE, 
+                trail.y * BLOCK_SIZE, 
+                BLOCK_SIZE, 
+                BLOCK_SIZE
+            );
+            
+            ctx.strokeStyle = trail.color;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(
+                trail.x * BLOCK_SIZE, 
+                trail.y * BLOCK_SIZE, 
+                BLOCK_SIZE, 
+                BLOCK_SIZE
+            );
+            
+            ctx.restore();
+        });
+    }
+
+    function addFloatingMessage(text, color = '#fff', size = 50, priority = 0) {
+        const activeMessages = floatingMessages.filter(m => m.life > 60);
+        const stackPosition = activeMessages.length;
+        const baseY = canvas.height / 2;
+        const offsetY = stackPosition * 60;
+        
+        floatingMessages.push({
+            text: text,
+            x: canvas.width / 2,
+            y: baseY - offsetY,
+            color: color,
+            size: size,
+            life: 90,
+            maxLife: 90,
+            vy: -1,
+            scale: 1.5,
+            priority: priority
+        });
+    }
+
+    function updateFloatingMessages() {
+        floatingMessages.forEach(msg => {
+            msg.y += msg.vy;
+            msg.life--;
+            msg.scale = Math.max(1, msg.scale - 0.02);
+        });
+        floatingMessages = floatingMessages.filter(msg => msg.life > 0);
+    }
+
+    function drawFloatingMessages() {
+        const sortedMessages = [...floatingMessages].sort((a, b) => a.priority - b.priority);
+        
+        sortedMessages.forEach(msg => {
+            const alpha = Math.min(1, msg.life / 30);
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.translate(msg.x, msg.y);
+            ctx.scale(msg.scale, msg.scale);
+            
+            ctx.shadowColor = 'rgba(0,0,0,0.9)';
+            ctx.shadowBlur = 15;
+            ctx.shadowOffsetX = 3;
+            ctx.shadowOffsetY = 3;
+            
+            ctx.fillStyle = msg.color;
+            ctx.font = `bold ${msg.size}px Courier New`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            let offsetX = 0, offsetY = 0;
+            if (msg.text.includes('TETRIS')) {
+                offsetX = (Math.random() - 0.5) * 8;
+                offsetY = (Math.random() - 0.5) * 8;
+            }
+            
+            ctx.fillText(msg.text, offsetX, offsetY);
+            ctx.restore();
+        });
+    }
+
+    function getGhostY() {
+        let ghostY = posY;
+        while (!collide(posX, ghostY + 1)) {
+            ghostY++;
+        }
+        return ghostY;
+    }
+
+    function drawGhostPiece() {
+        const ghostY = getGhostY();
+        ctx.globalAlpha = 0.2;
+        piece.forEach((row, y) => {
+            row.forEach((color, x) => {
+                if (color !== 0) {
+                    drawRect(ctx, posX + x, ghostY + y, COLORS[color]);
+                }
+            });
+        });
+        ctx.globalAlpha = 1;
+    }
+
+    function createBoard() {
+        board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+    }
+
+    function drawRect(context, x, y, color, size = BLOCK_SIZE) {
+        context.fillStyle = color;
+        context.fillRect(x * size, y * size, size, size);
+        context.strokeStyle = '#111';
+        context.strokeRect(x * size, y * size, size, size);
+    }
+
+    function drawBoard() {
+        board.forEach((row, y) => {
+            row.forEach((color, x) => {
+                if (color !== 0) drawRect(ctx, x, y, COLORS[color]);
+            });
+        });
+    }
+
+    function drawPiece() {
+        piece.forEach((row, y) => {
+            row.forEach((color, x) => {
+                if (color !== 0) drawRect(ctx, posX + x, posY + y, COLORS[color]);
+            });
+        });
+    }
+
+    function drawNextPiece() {
+        nctx.fillStyle = '#0a0a1a';
+        nctx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
+        const size = 25;
+        let offsetX = (nextCanvas.width / size - nextPiece[0].length) / 2;
+        let offsetY = (nextCanvas.height / size - nextPiece.length) / 2;
+        nextPiece.forEach((row, y) => {
+            row.forEach((color, x) => {
+                if (color !== 0) drawRect(nctx, x + offsetX, y + offsetY, COLORS[color], size);
+            });
+        });
+    }
+
+    function draw() {
+        ctx.fillStyle = '#0a0a1a';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        drawBoard();
+        drawTrails();
+        drawGhostPiece();
+        drawPiece();
+        drawParticles();
+        drawFloatingMessages();
+        
+        if (gameOver) {
+            ctx.fillStyle = 'rgba(0,0,0,0.8)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#e94560';
+            ctx.font = 'bold 40px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 30);
+            ctx.fillStyle = '#fff';
+            ctx.font = '20px Courier New';
+            ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 2 + 10);
+            ctx.fillStyle = '#00f0f0';
+            ctx.font = 'bold 18px Courier New';
+            ctx.fillText('Presiona R o haz clic', canvas.width / 2, canvas.height / 2 + 80);
+        }
+    }
+
+    function collide(offX, offY, testPiece = piece) {
+        for (let y = 0; y < testPiece.length; y++) {
+            for (let x = 0; x < testPiece[y].length; x++) {
+                if (testPiece[y][x] !== 0) {
+                    let boardX = offX + x;
+                    let boardY = offY + y;
+                    if (boardX < 0 || boardX >= COLS || boardY >= ROWS || 
+                       (boardY >= 0 && board[boardY][boardX] !== 0)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    function merge() {
+        piece.forEach((row, y) => {
+            row.forEach((color, x) => {
+                if (color !== 0) board[posY + y][posX + x] = color;
+            });
+        });
+        playSound(100, 'triangle', 0.1);
+    }
+
+    function rotate(matrix) {
+        const N = matrix.length;
+        const M = matrix[0].length;
+        let result = Array.from({ length: M }, () => Array(N).fill(0));
+        for (let y = 0; y < N; y++)
+            for (let x = 0; x < M; x++)
+                result[x][N - 1 - y] = matrix[y][x];
+        return result;
+    }
+
+    function clearLines() {
+        let linesCleared = 0;
+        outer: for (let y = ROWS - 1; y >= 0; y--) {
+            for (let x = 0; x < COLS; x++) {
+                if (board[y][x] === 0) continue outer;
+            }
+            spawnParticles(y);
+            const row = board.splice(y, 1)[0].fill(0);
+            board.unshift(row);
+            linesCleared++;
+            y++;
+        }
+        
+        if (linesCleared > 0) {
+            playClearSound(linesCleared);
+            lines += linesCleared;
+            
+            const messages = ['', '¡BIEN!', '¡DOBLE!', '¡¡TRIPLE!!', '¡¡¡TETRIS!!!'];
+            const colors = ['', '#ffffff', '#00ffff', '#ff00ff', '#ffff00'];
+            const sizes = [0, 40, 50, 60, 80];
+            
+            if (linesCleared >= 1 && linesCleared <= 4) {
+                const priority = linesCleared === 4 ? 1 : 0;
+                addFloatingMessage(messages[linesCleared], colors[linesCleared], sizes[linesCleared], priority);
+                
+                if (linesCleared === 4) {
+                    setMascotState('celebrating', 2000);
+                } else {
+                    setMascotState('happy', 1000);
+                }
+            }
+            
+            comboCount++;
+            if (comboCount > 1) {
+                addFloatingMessage(`¡COMBO x${comboCount}!`, '#ff8800', 45, 0);
+                comboCounter.textContent = `🔥 COMBO x${comboCount}`;
+                comboCounter.classList.remove('active');
+                setTimeout(() => comboCounter.classList.add('active'), 10);
+            } else {
+                comboCounter.textContent = '';
+            }
+            
+            const points = [0, 100, 300, 500, 800];
+            score += points[linesCleared] * level;
+            
+            linesUntilNextLevel -= linesCleared;
+            const progress = ((10 - linesUntilNextLevel) / 10) * 100;
+            levelBar.style.width = progress + '%';
+            
+            if (linesUntilNextLevel <= 0) {
+                level++;
+                linesUntilNextLevel = 10;
+                dropInterval = Math.max(100, 1000 - (level - 1) * 80);
+                
+                levelBar.classList.add('exploding');
+                setTimeout(() => levelBar.classList.remove('exploding'), 500);
+                
+                addFloatingMessage(`¡NIVEL ${level}!`, '#00ffff', 60, 1);
+            }
+            
+            document.getElementById('score').innerText = score;
+            document.getElementById('level').innerText = level;
+            document.getElementById('lines').innerText = lines;
+            
+            setTimeout(() => checkMascotState(), 100);
+        } else {
+            comboCount = 0;
+            comboCounter.textContent = '';
+        }
+        return linesCleared;
+    }
+
+    function getRandomPiece() {
+        const id = Math.floor(Math.random() * SHAPES.length) + 1;
+        return SHAPES[id - 1].map(row => [...row]);
+    }
+
+    function spawn() {
+        piece = nextPiece || getRandomPiece();
+        nextPiece = getRandomPiece();
+        posX = Math.floor(COLS / 2) - Math.floor(piece[0].length / 2);
+        posY = 0;
+        trails = [];
+        drawNextPiece();
+        
+        if (collide(posX, posY)) {
+            gameOver = true;
+            playSound(200, 'sawtooth', 0.5);
+            setTimeout(() => playSound(150, 'sawtooth', 0.5), 200);
+            setTimeout(() => playSound(100, 'sawtooth', 0.8), 400);
+            bgm.pause();
+            restartBtn.style.display = 'block';
+            setMascotState('scared');
+        }
+    }
+
+    function resetGame() {
+        score = 0;
+        level = 1;
+        lines = 0;
+        dropInterval = 1000;
+        dropCounter = 0;
+        lastTime = 0;
+        particles = [];
+        floatingMessages = [];
+        comboCount = 0;
+        linesUntilNextLevel = 10;
+        trails = [];
+        playerInputDrop = false;
+        gameOver = false;
+
+        document.getElementById('score').innerText = score;
+        document.getElementById('level').innerText = level;
+        document.getElementById('lines').innerText = lines;
+        levelBar.style.width = '0%';
+        comboCounter.textContent = '';
+
+        createBoard();
+        nextPiece = getRandomPiece();
+        spawn();
+        
+        setMascotState('normal');
+
+        restartBtn.style.display = 'none';
+
+        if (musicEnabled) {
+            bgm.currentTime = 0;
+            bgm.play().catch(e => console.log("Error al reproducir música:", e));
+        }
+
+        requestAnimationFrame(update);
+    }
+
+    function playerMove(dir) {
+        posX += dir;
+        if (collide(posX, posY)) posX -= dir;
+        else playSound(300, 'square', 0.03, 0.05);
+    }
+
+    // CORRECCIÓN: playerDrop ahora acepta un parámetro para saber si es input del jugador
+    function playerDrop(isPlayerInput = false) {
+        playerInputDrop = isPlayerInput; // Solo true si el jugador presionó ↓
+        addTrail();
+        posY++;
+        if (collide(posX, posY)) {
+            posY--;
+            merge();
+            clearLines();
+            spawn();
+            checkMascotState();
+        }
+        dropCounter = 0;
+        playerInputDrop = false; // Resetear inmediatamente
+    }
+
+    function playerHardDrop() {
+        playerInputDrop = true; // Hard drop siempre deja estela
+        let dropDistance = 0;
+        while (!collide(posX, posY + 1)) {
+            addTrail();
+            posY++;
+            dropDistance++;
+        }
+        merge();
+        score += dropDistance * 2;
+        document.getElementById('score').innerText = score;
+        clearLines();
+        spawn();
+        playSound(80, 'triangle', 0.2, 0.15);
+        checkMascotState();
+        playerInputDrop = false;
+    }
+
+    function playerRotate() {
+        let original = piece;
+        let rotated = rotate(piece);
+        
+        if (!collide(posX, posY, rotated)) {
+            piece = rotated;
+            playSound(400, 'square', 0.05, 0.05);
+            return;
+        }
+        
+        const kicks = [
+            { x: -1, y: 0 },
+            { x: 1, y: 0 },
+            { x: -2, y: 0 },
+            { x: 2, y: 0 },
+            { x: 0, y: -1 },
+            { x: -1, y: -1 },
+            { x: 1, y: -1 }
+        ];
+        
+        for (let kick of kicks) {
+            if (!collide(posX + kick.x, posY + kick.y, rotated)) {
+                piece = rotated;
+                posX += kick.x;
+                posY += kick.y;
+                playSound(400, 'square', 0.05, 0.05);
+                return;
+            }
+        }
+        
+        piece = original;
+    }
+
+    function update(time = 0) {
+        if (gameOver) {
+            draw();
+            return;
+        }
+        const deltaTime = time - lastTime;
+        lastTime = time;
+        dropCounter += deltaTime;
+        
+        // CORRECCIÓN: la caída automática NO pasa isPlayerInput
+        if (dropCounter > dropInterval) playerDrop(false);
+        
+        updateParticles();
+        updateTrails();
+        updateFloatingMessages();
+        draw();
+        requestAnimationFrame(update);
+    }
+
+    document.addEventListener('keydown', event => {
+        initAudio();
+        
+        if (bgm.paused && musicEnabled && !gameOver) {
+            bgm.volume = 0.3;
+            bgm.play().catch(e => console.log("Error al reproducir música:", e));
+        }
+        
+        if (event.key === 'm' || event.key === 'M') {
+            toggleMusic();
+            return;
+        }
+        
+        if (gameOver) {
+            if (event.key === 'r' || event.key === 'R' || event.code === 'Space') {
+                resetGame();
+            }
+            return;
+        }
+        
+        if (event.key === 'ArrowLeft') playerMove(-1);
+        else if (event.key === 'ArrowRight') playerMove(1);
+        else if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            playerDrop(true); // CORRECCIÓN: true = input del jugador, deja estela
+        }
+        else if (event.key === 'ArrowUp') playerRotate();
+        else if (event.code === 'Space') {
+            event.preventDefault();
+            playerHardDrop();
+        }
+    });
+
+    musicToggle.addEventListener('click', () => {
+        initAudio();
+        toggleMusic();
+    });
+
+    restartBtn.addEventListener('click', () => {
+        initAudio();
+        resetGame();
+    });
+
+    createBoard();
+    nextPiece = getRandomPiece();
+    spawn();
+    update();
+</script>
+</body>
+</html>

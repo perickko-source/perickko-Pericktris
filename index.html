@@ -28,7 +28,6 @@
             text-align: center;
         }
         
-        /* Logo del juego */
         .game-logo {
             font-size: 26px;
             font-weight: bold;
@@ -53,7 +52,9 @@
         
         .mascot {
             margin-top: 20px;
-            font-size: 55px;
+            width: 70px;
+            height: 70px;
+            object-fit: contain;
             transition: transform 0.3s ease;
             display: inline-block;
         }
@@ -119,13 +120,13 @@
         
         .canvas-container { position: relative; }
 
-        canvas {
+        canvas#game {
             border: 4px solid #0f3460;
             box-shadow: 0 0 20px rgba(233, 69, 96, 0.3);
             background-color: #0a0a1a;
             display: block;
         }
-        #next {
+        canvas#next {
             border: 2px solid #0f3460;
             margin-top: 10px;
             background: #0a0a1a;
@@ -194,9 +195,11 @@
         <h2>LINES</h2>
         <p id="lines">0</p>
         <h3>NEXT</h3>
-        <canvas id="next" width="140" height="100"></canvas>
-        <div class="mascot" id="mascot">😊</div>
-        <div class="music-control" id="musicToggle"> Música: ON</div>
+        <canvas id="next" width="150" height="120"></canvas>
+        
+        <img class="mascot" id="mascot" src="Normal.png" alt="Mascota">
+        
+        <div class="music-control" id="musicToggle">🎵 Música: ON</div>
         <div class="controls">
             <strong>CONTROLES:</strong><br>
             ← → Mover<br>
@@ -209,6 +212,7 @@
     </div>
     
     <div class="canvas-container">
+        <!-- RESTAURADO: Tablero original de 10 columnas x 20 filas (300x600 píxeles) -->
         <canvas id="game" width="300" height="600"></canvas>
         <button id="restartBtn" class="restart-btn">🔄 Jugar de Nuevo</button>
     </div>
@@ -230,6 +234,7 @@
     const comboCounter = document.getElementById('comboCounter');
     const mascot = document.getElementById('mascot');
     
+    // RESTAURADO: Tamaño original
     const BLOCK_SIZE = 30;
     const COLS = 10;
     const ROWS = 20;
@@ -258,7 +263,6 @@
     let mascotTimer = null;
     
     let trails = [];
-    let playerInputDrop = false; // NUEVO: solo true cuando el jugador presiona ↓ o ESPACIO
 
     function initAudio() {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -308,32 +312,23 @@
         mascotState = state;
         mascot.className = 'mascot';
         
-        switch(state) {
-            case 'normal':
-                mascot.textContent = '😊';
-                break;
-            case 'happy':
-                mascot.textContent = '😄';
-                mascot.classList.add('happy');
-                if (duration) {
-                    mascotTimer = setTimeout(() => setMascotState('normal'), duration);
-                }
-                break;
-            case 'celebrating':
-                mascot.textContent = '';
-                mascot.classList.add('celebrating');
-                if (duration) {
-                    mascotTimer = setTimeout(() => setMascotState('normal'), duration);
-                }
-                break;
-            case 'scared':
-                mascot.textContent = '😱';
-                mascot.classList.add('scared');
-                break;
-            case 'sweating':
-                mascot.textContent = '😰';
-                mascot.classList.add('sweating');
-                break;
+        const images = {
+            'normal': 'Normal.png',
+            'happy': 'Feliz.png',
+            'celebrating': 'Celebrando.png',
+            'scared': 'Asustada.png',
+            'sweating': 'Sudando.png'
+        };
+        
+        mascot.src = images[state] || 'Normal.png';
+        
+        if (state === 'happy') mascot.classList.add('happy');
+        else if (state === 'celebrating') mascot.classList.add('celebrating');
+        else if (state === 'scared') mascot.classList.add('scared');
+        else if (state === 'sweating') mascot.classList.add('sweating');
+
+        if (duration && (state === 'happy' || state === 'celebrating')) {
+            mascotTimer = setTimeout(() => setMascotState('normal'), duration);
         }
     }
 
@@ -354,6 +349,7 @@
         
         const fillPercentage = filledBlocks / (ROWS * COLS);
         
+        // RESTAURADO: Umbral original (fila 3)
         if (highestBlock <= 3) {
             if (mascotState !== 'scared' && mascotState !== 'celebrating' && mascotState !== 'happy') {
                 setMascotState('scared');
@@ -397,20 +393,20 @@
         ctx.globalAlpha = 1;
     }
 
-    // --- ESTELA: solo se activa con input del jugador ---
-    function addTrail() {
-        if (!playerInputDrop) return; // CORRECCIÓN: solo si el jugador presionó ↓ o ESPACIO
-        
+    function addFullTrail(ghostY) {
         piece.forEach((row, y) => {
             row.forEach((color, x) => {
                 if (color !== 0) {
-                    trails.push({
-                        x: posX + x,
-                        y: posY + y,
-                        color: COLORS[color],
-                        life: 30,
-                        maxLife: 30
-                    });
+                    const blockX = posX + x;
+                    const blockY = posY + y;
+                    for (let ty = blockY; ty <= ghostY + y; ty++) {
+                        trails.push({
+                            x: blockX,
+                            y: ty,
+                            life: 10,
+                            maxLife: 10
+                        });
+                    }
                 }
             });
         });
@@ -426,30 +422,21 @@
     function drawTrails() {
         trails.forEach(trail => {
             const lifeRatio = trail.life / trail.maxLife;
-            const alpha = lifeRatio * 0.7;
-            
+            const alpha = lifeRatio;
+
             ctx.save();
             ctx.globalAlpha = alpha;
-            ctx.shadowColor = trail.color;
-            ctx.shadowBlur = 10;
-            
-            ctx.fillStyle = trail.color;
+            ctx.shadowColor = '#ffffff';
+            ctx.shadowBlur = 15;
+            ctx.fillStyle = '#ffffff'; 
+
             ctx.fillRect(
-                trail.x * BLOCK_SIZE, 
-                trail.y * BLOCK_SIZE, 
-                BLOCK_SIZE, 
-                BLOCK_SIZE
+                trail.x * BLOCK_SIZE + 6,
+                trail.y * BLOCK_SIZE + 6,
+                BLOCK_SIZE - 12,
+                BLOCK_SIZE - 12
             );
-            
-            ctx.strokeStyle = trail.color;
-            ctx.lineWidth = 2;
-            ctx.strokeRect(
-                trail.x * BLOCK_SIZE, 
-                trail.y * BLOCK_SIZE, 
-                BLOCK_SIZE, 
-                BLOCK_SIZE
-            );
-            
+
             ctx.restore();
         });
     }
@@ -565,7 +552,7 @@
     function drawNextPiece() {
         nctx.fillStyle = '#0a0a1a';
         nctx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
-        const size = 25;
+        const size = 30;
         let offsetX = (nextCanvas.width / size - nextPiece[0].length) / 2;
         let offsetY = (nextCanvas.height / size - nextPiece.length) / 2;
         nextPiece.forEach((row, y) => {
@@ -671,7 +658,7 @@
             comboCount++;
             if (comboCount > 1) {
                 addFloatingMessage(`¡COMBO x${comboCount}!`, '#ff8800', 45, 0);
-                comboCounter.textContent = `🔥 COMBO x${comboCount}`;
+                comboCounter.textContent = ` COMBO x${comboCount}`;
                 comboCounter.classList.remove('active');
                 setTimeout(() => comboCounter.classList.add('active'), 10);
             } else {
@@ -718,7 +705,6 @@
         nextPiece = getRandomPiece();
         posX = Math.floor(COLS / 2) - Math.floor(piece[0].length / 2);
         posY = 0;
-        trails = [];
         drawNextPiece();
         
         if (collide(posX, posY)) {
@@ -744,7 +730,6 @@
         comboCount = 0;
         linesUntilNextLevel = 10;
         trails = [];
-        playerInputDrop = false;
         gameOver = false;
 
         document.getElementById('score').innerText = score;
@@ -775,10 +760,7 @@
         else playSound(300, 'square', 0.03, 0.05);
     }
 
-    // CORRECCIÓN: playerDrop ahora acepta un parámetro para saber si es input del jugador
-    function playerDrop(isPlayerInput = false) {
-        playerInputDrop = isPlayerInput; // Solo true si el jugador presionó ↓
-        addTrail();
+    function playerDrop() {
         posY++;
         if (collide(posX, posY)) {
             posY--;
@@ -788,17 +770,16 @@
             checkMascotState();
         }
         dropCounter = 0;
-        playerInputDrop = false; // Resetear inmediatamente
     }
 
     function playerHardDrop() {
-        playerInputDrop = true; // Hard drop siempre deja estela
-        let dropDistance = 0;
-        while (!collide(posX, posY + 1)) {
-            addTrail();
-            posY++;
-            dropDistance++;
-        }
+        const ghostY = getGhostY();
+        const dropDistance = ghostY - posY;
+        
+        addFullTrail(ghostY);
+        
+        posY = ghostY;
+        
         merge();
         score += dropDistance * 2;
         document.getElementById('score').innerText = score;
@@ -806,7 +787,6 @@
         spawn();
         playSound(80, 'triangle', 0.2, 0.15);
         checkMascotState();
-        playerInputDrop = false;
     }
 
     function playerRotate() {
@@ -851,8 +831,7 @@
         lastTime = time;
         dropCounter += deltaTime;
         
-        // CORRECCIÓN: la caída automática NO pasa isPlayerInput
-        if (dropCounter > dropInterval) playerDrop(false);
+        if (dropCounter > dropInterval) playerDrop();
         
         updateParticles();
         updateTrails();
@@ -885,7 +864,7 @@
         else if (event.key === 'ArrowRight') playerMove(1);
         else if (event.key === 'ArrowDown') {
             event.preventDefault();
-            playerDrop(true); // CORRECCIÓN: true = input del jugador, deja estela
+            playerDrop();
         }
         else if (event.key === 'ArrowUp') playerRotate();
         else if (event.code === 'Space') {

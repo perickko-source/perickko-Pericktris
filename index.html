@@ -2,23 +2,33 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Pericktris</title>
     <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        
         body {
             background-color: #1a1a2e;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
             font-family: 'Courier New', monospace;
             color: #eee;
+            overflow: hidden;
         }
+        
         .game-wrapper {
             display: flex;
             gap: 20px;
             align-items: flex-start;
         }
+        
         .side-panel {
             background: #16213e;
             padding: 25px 20px;
@@ -176,6 +186,171 @@
             text-align: left;
             line-height: 1.6;
         }
+
+        /* ============================================ */
+        /* CONTROLES TÁCTILES (ocultos en desktop) */
+        /* ============================================ */
+        .touch-controls {
+            display: none;
+            width: 100%;
+            max-width: 360px;
+            margin-top: 15px;
+            padding: 10px;
+        }
+        
+        .touch-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .touch-btn {
+            background: #16213e;
+            border: 3px solid #0f3460;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 24px;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.1s;
+            box-shadow: 0 4px 0 #0a0a1a;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        .touch-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #0a0a1a;
+            background: #e94560;
+        }
+        
+        .touch-btn.hard-drop {
+            width: 150px;
+            background: #e94560;
+            border-color: #ff6b81;
+            font-size: 16px;
+        }
+        
+        .touch-btn.small {
+            width: 50px;
+            height: 50px;
+            font-size: 18px;
+        }
+
+        /* ============================================ */
+        /* RESPONSIVE: MÓVIL */
+        /* ============================================ */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+                padding: 10px;
+                overflow-y: auto;
+            }
+            
+            .game-wrapper {
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+                width: 100%;
+            }
+            
+            .side-panel {
+                width: 100%;
+                max-width: 360px;
+                padding: 15px;
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 10px;
+                text-align: center;
+            }
+            
+            .game-logo {
+                grid-column: 1 / -1;
+                font-size: 22px;
+                margin-bottom: 5px;
+            }
+            
+            .side-panel h2 {
+                font-size: 12px;
+                margin: 0;
+            }
+            
+            .side-panel p {
+                font-size: 18px;
+            }
+            
+            .side-panel h3 {
+                margin-top: 0;
+                font-size: 12px;
+            }
+            
+            .mascot {
+                width: 50px;
+                height: 50px;
+                margin-top: 5px;
+            }
+            
+            .level-bar-container {
+                grid-column: 1 / -1;
+                margin-top: 5px;
+            }
+            
+            .combo-counter {
+                grid-column: 1 / -1;
+                margin-top: 5px;
+                font-size: 14px;
+            }
+            
+            canvas#next {
+                width: 100px;
+                height: 80px;
+                margin-top: 0;
+            }
+            
+            .music-control {
+                margin-top: 5px;
+                font-size: 12px;
+                padding: 6px;
+            }
+            
+            .controls {
+                display: none; /* Ocultar controles de teclado en móvil */
+            }
+            
+            canvas#game {
+                max-width: 100%;
+                height: auto;
+            }
+            
+            .touch-controls {
+                display: block; /* Mostrar controles táctiles */
+            }
+            
+            .restart-btn {
+                top: 50%;
+                font-size: 16px;
+                padding: 12px 24px;
+            }
+        }
+        
+        /* Para pantallas muy pequeñas */
+        @media (max-width: 380px) {
+            .touch-btn {
+                width: 60px;
+                height: 60px;
+                font-size: 20px;
+            }
+            .touch-btn.hard-drop {
+                width: 130px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -184,22 +359,34 @@
     <div class="side-panel">
         <div class="game-logo">PERICKTRIS</div>
         
-        <h2>SCORE</h2>
-        <p id="score">0</p>
-        <h2>LEVEL</h2>
-        <p id="level">1</p>
-        <div class="level-bar-container">
+        <div>
+            <h2>SCORE</h2>
+            <p id="score">0</p>
+        </div>
+        <div>
+            <h2>LEVEL</h2>
+            <p id="level">1</p>
+        </div>
+        <div>
+            <h2>LINES</h2>
+            <p id="lines">0</p>
+        </div>
+        
+        <div class="level-bar-container" style="grid-column: 1 / -1;">
             <div class="level-bar" id="levelBar"></div>
         </div>
-        <div class="combo-counter" id="comboCounter"></div>
-        <h2>LINES</h2>
-        <p id="lines">0</p>
-        <h3>NEXT</h3>
-        <canvas id="next" width="150" height="120"></canvas>
+        
+        <div class="combo-counter" id="comboCounter" style="grid-column: 1 / -1;"></div>
+        
+        <div style="grid-column: 1 / -1;">
+            <h3>NEXT</h3>
+            <canvas id="next" width="150" height="120"></canvas>
+        </div>
         
         <img class="mascot" id="mascot" src="Normal.png" alt="Mascota">
         
         <div class="music-control" id="musicToggle">🎵 Música: ON</div>
+        
         <div class="controls">
             <strong>CONTROLES:</strong><br>
             ← → Mover<br>
@@ -212,9 +399,24 @@
     </div>
     
     <div class="canvas-container">
-        <!-- RESTAURADO: Tablero original de 10 columnas x 20 filas (300x600 píxeles) -->
         <canvas id="game" width="300" height="600"></canvas>
         <button id="restartBtn" class="restart-btn">🔄 Jugar de Nuevo</button>
+    </div>
+</div>
+
+<!-- Controles táctiles para móvil -->
+<div class="touch-controls">
+    <div class="touch-row">
+        <button class="touch-btn small" id="btnRotate">↻</button>
+        <button class="touch-btn small" id="btnMusic">🎵</button>
+    </div>
+    <div class="touch-row">
+        <button class="touch-btn" id="btnLeft">←</button>
+        <button class="touch-btn" id="btnDown">↓</button>
+        <button class="touch-btn" id="btnRight">→</button>
+    </div>
+    <div class="touch-row">
+        <button class="touch-btn hard-drop" id="btnHardDrop">HARD DROP</button>
     </div>
 </div>
 
@@ -234,7 +436,6 @@
     const comboCounter = document.getElementById('comboCounter');
     const mascot = document.getElementById('mascot');
     
-    // RESTAURADO: Tamaño original
     const BLOCK_SIZE = 30;
     const COLS = 10;
     const ROWS = 20;
@@ -349,7 +550,6 @@
         
         const fillPercentage = filledBlocks / (ROWS * COLS);
         
-        // RESTAURADO: Umbral original (fila 3)
         if (highestBlock <= 3) {
             if (mascotState !== 'scared' && mascotState !== 'celebrating' && mascotState !== 'happy') {
                 setMascotState('scared');
@@ -658,7 +858,7 @@
             comboCount++;
             if (comboCount > 1) {
                 addFloatingMessage(`¡COMBO x${comboCount}!`, '#ff8800', 45, 0);
-                comboCounter.textContent = ` COMBO x${comboCount}`;
+                comboCounter.textContent = `🔥 COMBO x${comboCount}`;
                 comboCounter.classList.remove('active');
                 setTimeout(() => comboCounter.classList.add('active'), 10);
             } else {
@@ -840,6 +1040,7 @@
         requestAnimationFrame(update);
     }
 
+    // --- CONTROLES DE TECLADO ---
     document.addEventListener('keydown', event => {
         initAudio();
         
@@ -871,6 +1072,50 @@
             event.preventDefault();
             playerHardDrop();
         }
+    });
+
+    // --- CONTROLES TÁCTILES (MÓVIL) ---
+    function addTouchControl(btnId, action) {
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+        
+        // Prevenir el zoom al hacer doble tap
+        btn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            initAudio();
+            action();
+        }, { passive: false });
+        
+        // También funcionar con clic (para tablets con ratón)
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            initAudio();
+            action();
+        });
+    }
+
+    addTouchControl('btnLeft', () => {
+        if (!gameOver) playerMove(-1);
+    });
+    
+    addTouchControl('btnRight', () => {
+        if (!gameOver) playerMove(1);
+    });
+    
+    addTouchControl('btnDown', () => {
+        if (!gameOver) playerDrop();
+    });
+    
+    addTouchControl('btnRotate', () => {
+        if (!gameOver) playerRotate();
+    });
+    
+    addTouchControl('btnHardDrop', () => {
+        if (!gameOver) playerHardDrop();
+    });
+    
+    addTouchControl('btnMusic', () => {
+        toggleMusic();
     });
 
     musicToggle.addEventListener('click', () => {

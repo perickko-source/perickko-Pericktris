@@ -2,31 +2,40 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pericktris</title>
     <style>
         * {
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
             user-select: none;
+            -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #1a1a2e;
+            font-family: 'Courier New', monospace;
+            color: #eee;
+            touch-action: none;
         }
         
         body {
-            background-color: #1a1a2e;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            font-family: 'Courier New', monospace;
-            color: #eee;
-            overflow: hidden;
         }
         
         .game-wrapper {
             display: flex;
             gap: 20px;
             align-items: flex-start;
+            max-height: 100vh;
+            padding: 10px;
         }
         
         .side-panel {
@@ -36,6 +45,7 @@
             box-shadow: 0 0 15px rgba(0,0,0,0.5);
             width: 180px;
             text-align: center;
+            flex-shrink: 0;
         }
         
         .game-logo {
@@ -99,7 +109,6 @@
             border-radius: 5px;
             height: 20px;
             overflow: hidden;
-            position: relative;
         }
         .level-bar {
             height: 100%;
@@ -120,7 +129,6 @@
             font-weight: bold;
             color: #f0a000;
             min-height: 30px;
-            transition: transform 0.2s;
         }
         .combo-counter.active { animation: pulse 0.3s ease; }
         @keyframes pulse {
@@ -157,13 +165,7 @@
             border: 3px solid #fff;
             border-radius: 8px;
             cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
             z-index: 10;
-            transition: transform 0.1s, background 0.2s;
-        }
-        .restart-btn:hover {
-            background: #ff6b81;
-            transform: translateX(-50%) scale(1.05);
         }
 
         .music-control {
@@ -174,9 +176,7 @@
             padding: 8px;
             border-radius: 5px;
             cursor: pointer;
-            transition: background 0.3s;
         }
-        .music-control:hover { background: #ff6b81; }
         .music-control.muted { background: #555; color: #aaa; }
         
         .controls {
@@ -194,15 +194,14 @@
             display: none;
             width: 100%;
             max-width: 360px;
-            margin-top: 15px;
-            padding: 10px;
+            padding: 5px;
         }
         
         .touch-row {
             display: flex;
             justify-content: center;
-            gap: 10px;
-            margin-bottom: 10px;
+            gap: 8px;
+            margin-bottom: 8px;
         }
         
         .touch-btn {
@@ -213,16 +212,13 @@
             font-size: 24px;
             font-weight: bold;
             font-family: 'Courier New', monospace;
-            width: 70px;
-            height: 70px;
+            width: 65px;
+            height: 65px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.1s;
             box-shadow: 0 4px 0 #0a0a1a;
-            -webkit-user-select: none;
-            user-select: none;
         }
         
         .touch-btn:active {
@@ -232,10 +228,10 @@
         }
         
         .touch-btn.hard-drop {
-            width: 150px;
+            width: 140px;
             background: #e94560;
             border-color: #ff6b81;
-            font-size: 16px;
+            font-size: 14px;
         }
         
         .touch-btn.small {
@@ -245,110 +241,157 @@
         }
 
         /* ============================================ */
-        /* RESPONSIVE: MÓVIL */
+        /* RESPONSIVE: MÓVIL - Todo en 100vh */
         /* ============================================ */
         @media (max-width: 768px) {
             body {
                 flex-direction: column;
-                padding: 10px;
-                overflow-y: auto;
+                padding: 0;
             }
             
             .game-wrapper {
                 flex-direction: column;
                 align-items: center;
-                gap: 10px;
+                gap: 5px;
                 width: 100%;
+                height: 100vh;
+                padding: 5px;
+                max-height: 100vh;
+                overflow: hidden;
             }
             
             .side-panel {
                 width: 100%;
                 max-width: 360px;
-                padding: 15px;
+                padding: 8px 12px;
                 display: grid;
                 grid-template-columns: 1fr 1fr 1fr;
-                gap: 10px;
+                gap: 5px;
                 text-align: center;
+                flex-shrink: 0;
             }
             
             .game-logo {
                 grid-column: 1 / -1;
-                font-size: 22px;
-                margin-bottom: 5px;
+                font-size: 18px;
+                margin-bottom: 3px;
             }
             
             .side-panel h2 {
-                font-size: 12px;
+                font-size: 10px;
                 margin: 0;
             }
             
             .side-panel p {
-                font-size: 18px;
+                font-size: 16px;
             }
             
             .side-panel h3 {
                 margin-top: 0;
-                font-size: 12px;
+                font-size: 10px;
+                padding: 3px;
             }
             
             .mascot {
-                width: 50px;
-                height: 50px;
-                margin-top: 5px;
+                width: 40px;
+                height: 40px;
+                margin-top: 3px;
             }
             
             .level-bar-container {
                 grid-column: 1 / -1;
-                margin-top: 5px;
+                margin-top: 3px;
+                height: 14px;
             }
             
             .combo-counter {
                 grid-column: 1 / -1;
-                margin-top: 5px;
-                font-size: 14px;
+                margin-top: 3px;
+                font-size: 12px;
+                min-height: 18px;
             }
             
             canvas#next {
-                width: 100px;
-                height: 80px;
+                width: 90px;
+                height: 70px;
                 margin-top: 0;
             }
             
             .music-control {
-                margin-top: 5px;
-                font-size: 12px;
-                padding: 6px;
+                margin-top: 3px;
+                font-size: 11px;
+                padding: 4px;
             }
             
             .controls {
-                display: none; /* Ocultar controles de teclado en móvil */
+                display: none;
+            }
+            
+            /* Canvas escalado para caber */
+            .canvas-container {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 0;
+                width: 100%;
             }
             
             canvas#game {
                 max-width: 100%;
+                max-height: 100%;
                 height: auto;
+                width: auto;
+                border-width: 2px;
             }
             
             .touch-controls {
-                display: block; /* Mostrar controles táctiles */
+                display: block;
+                flex-shrink: 0;
             }
             
             .restart-btn {
                 top: 50%;
-                font-size: 16px;
-                padding: 12px 24px;
+                font-size: 14px;
+                padding: 10px 20px;
             }
         }
         
-        /* Para pantallas muy pequeñas */
         @media (max-width: 380px) {
             .touch-btn {
-                width: 60px;
-                height: 60px;
+                width: 55px;
+                height: 55px;
                 font-size: 20px;
             }
             .touch-btn.hard-drop {
-                width: 130px;
+                width: 120px;
+                font-size: 12px;
+            }
+            .touch-btn.small {
+                width: 45px;
+                height: 45px;
+            }
+        }
+        
+        /* Pantallas muy pequeñas en altura */
+        @media (max-height: 600px) and (max-width: 768px) {
+            .side-panel {
+                padding: 5px 10px;
+            }
+            .game-logo {
+                font-size: 14px;
+                margin-bottom: 2px;
+            }
+            .mascot {
+                width: 30px;
+                height: 30px;
+            }
+            .touch-btn {
+                width: 50px;
+                height: 50px;
+            }
+            .touch-btn.hard-drop {
+                width: 110px;
             }
         }
     </style>
@@ -407,7 +450,7 @@
 <!-- Controles táctiles para móvil -->
 <div class="touch-controls">
     <div class="touch-row">
-        <button class="touch-btn small" id="btnRotate">↻</button>
+        <button class="touch-btn small" id="btnRotate"></button>
         <button class="touch-btn small" id="btnMusic">🎵</button>
     </div>
     <div class="touch-row">
@@ -1040,7 +1083,6 @@
         requestAnimationFrame(update);
     }
 
-    // --- CONTROLES DE TECLADO ---
     document.addEventListener('keydown', event => {
         initAudio();
         
@@ -1074,19 +1116,16 @@
         }
     });
 
-    // --- CONTROLES TÁCTILES (MÓVIL) ---
     function addTouchControl(btnId, action) {
         const btn = document.getElementById(btnId);
         if (!btn) return;
         
-        // Prevenir el zoom al hacer doble tap
         btn.addEventListener('touchstart', (e) => {
             e.preventDefault();
             initAudio();
             action();
         }, { passive: false });
         
-        // También funcionar con clic (para tablets con ratón)
         btn.addEventListener('click', (e) => {
             e.preventDefault();
             initAudio();
@@ -1094,29 +1133,12 @@
         });
     }
 
-    addTouchControl('btnLeft', () => {
-        if (!gameOver) playerMove(-1);
-    });
-    
-    addTouchControl('btnRight', () => {
-        if (!gameOver) playerMove(1);
-    });
-    
-    addTouchControl('btnDown', () => {
-        if (!gameOver) playerDrop();
-    });
-    
-    addTouchControl('btnRotate', () => {
-        if (!gameOver) playerRotate();
-    });
-    
-    addTouchControl('btnHardDrop', () => {
-        if (!gameOver) playerHardDrop();
-    });
-    
-    addTouchControl('btnMusic', () => {
-        toggleMusic();
-    });
+    addTouchControl('btnLeft', () => { if (!gameOver) playerMove(-1); });
+    addTouchControl('btnRight', () => { if (!gameOver) playerMove(1); });
+    addTouchControl('btnDown', () => { if (!gameOver) playerDrop(); });
+    addTouchControl('btnRotate', () => { if (!gameOver) playerRotate(); });
+    addTouchControl('btnHardDrop', () => { if (!gameOver) playerHardDrop(); });
+    addTouchControl('btnMusic', () => { toggleMusic(); });
 
     musicToggle.addEventListener('click', () => {
         initAudio();
@@ -1126,6 +1148,17 @@
     restartBtn.addEventListener('click', () => {
         initAudio();
         resetGame();
+    });
+
+    // Prevenir scroll y zoom en móvil
+    document.addEventListener('touchmove', (e) => {
+        if (e.touches.length > 1) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+
+    document.addEventListener('gesturestart', (e) => {
+        e.preventDefault();
     });
 
     createBoard();

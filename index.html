@@ -182,24 +182,22 @@
         }
 
         /* ============================================ */
-        /* LAYOUT MÓVIL ULTRA COMPACTO */
+        /* LAYOUT MÓVIL - Panel mínimo, canvas máximo */
         /* ============================================ */
         @media (max-width: 768px) {
             body {
                 flex-direction: column;
-                padding: 0;
-                height: 100vh;
-                height: 100dvh; /* Dynamic viewport height para móviles */
+                padding: 2px;
             }
             
             .game-wrapper {
                 flex-direction: column;
                 width: 100%;
-                height: 100%;
-                gap: 0;
+                max-width: 500px;
+                gap: 2px;
             }
             
-            /* Panel súper compacto */
+            /* Panel mínimo - solo 2 filas */
             .side-panel {
                 width: 100%;
                 padding: 4px 6px;
@@ -207,35 +205,28 @@
                 grid-template-columns: 1fr 1fr 1fr;
                 gap: 2px;
                 text-align: center;
-                flex-shrink: 0;
             }
             
+            /* Ocultar logo en móvil para ganar espacio */
             .game-logo {
-                grid-column: 1 / -1;
-                font-size: 13px;
-                margin-bottom: 1px;
+                display: none;
             }
             
             .side-panel h2 {
-                font-size: 8px;
+                font-size: 9px;
                 margin: 0;
                 color: #e94560;
             }
             
             .side-panel p {
-                font-size: 13px;
+                font-size: 14px;
                 font-weight: bold;
                 color: #fff;
                 margin: 0;
             }
             
             .side-panel h3 {
-                margin: 0;
-                font-size: 8px;
-                padding: 2px;
-                background: #e94560;
-                color: #0f3460;
-                border-radius: 3px;
+                display: none; /* Ocultar label NEXT */
             }
             
             .mascot {
@@ -254,8 +245,8 @@
             .combo-counter {
                 grid-column: 1 / -1;
                 margin: 1px 0;
-                font-size: 10px;
-                min-height: 12px;
+                font-size: 11px;
+                min-height: 14px;
             }
             
             canvas#next {
@@ -267,13 +258,13 @@
             
             .music-control {
                 margin: 0;
-                font-size: 9px;
-                padding: 2px 5px;
+                font-size: 10px;
+                padding: 3px 5px;
             }
             
             .controls { display: none; }
             
-            /* Canvas ocupa todo el espacio restante */
+            /* Canvas ocupa TODO el espacio restante */
             .canvas-container {
                 flex: 1;
                 display: flex;
@@ -281,19 +272,18 @@
                 justify-content: center;
                 min-height: 0;
                 width: 100%;
-                overflow: hidden;
+                padding: 0 2px;
             }
             
             canvas#game {
-                display: block;
+                max-width: 100%;
+                max-height: 100%;
+                border-width: 2px;
                 touch-action: none;
             }
             
             .gesture-hint {
-                display: block;
-                font-size: 8px;
-                margin-top: 2px;
-                flex-shrink: 0;
+                display: none; /* Ocultar hint para ganar espacio */
             }
             
             .restart-btn {
@@ -469,45 +459,30 @@
             return;
         }
         
-        // En móvil, calcular el espacio exacto disponible
         const wrapper = document.querySelector('.canvas-container');
-        const wrapperRect = wrapper.getBoundingClientRect();
+        const wrapperWidth = wrapper.clientWidth;
+        const wrapperHeight = wrapper.clientHeight;
         
-        // Espacio disponible exacto
-        const availableWidth = wrapperRect.width;
-        const availableHeight = wrapperRect.height;
-        
-        // Calcular tamaño manteniendo proporción 1:2
-        // Dejar un pequeño margen de 4px
-        const margin = 4;
-        const maxWidth = availableWidth - margin;
-        const maxHeight = availableHeight - margin;
+        // Usar casi todo el espacio disponible (solo 4px de margen)
+        const maxWidth = wrapperWidth - 4;
+        const maxHeight = wrapperHeight - 4;
         
         let newWidth = maxWidth;
         let newHeight = newWidth * 2;
         
-        // Si la altura excede el espacio disponible, ajustar por altura
         if (newHeight > maxHeight) {
             newHeight = maxHeight;
             newWidth = newHeight / 2;
         }
         
-        // Asegurar tamaños mínimos
         if (newWidth < 150) newWidth = 150;
         if (newHeight < 300) newHeight = 300;
         
-        // Aplicar dimensiones al canvas
         canvas.width = newWidth;
         canvas.height = newHeight;
-        
-        // Calcular BLOCK_SIZE
         BLOCK_SIZE = newWidth / COLS;
     }
 
-    // Llamar al cargar y en resize
-    window.addEventListener('load', () => {
-        setTimeout(resizeCanvas, 100); // Pequeño delay para asegurar que el layout está listo
-    });
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 

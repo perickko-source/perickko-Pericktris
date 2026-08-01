@@ -173,76 +173,104 @@
             line-height: 1.6;
         }
 
-        /* Indicador de gestos - solo visible en móvil */
         .gesture-hint {
             display: none;
             text-align: center;
             font-size: 10px;
             color: #888;
             margin-top: 5px;
-            line-height: 1.4;
         }
 
         /* ============================================ */
-        /* LAYOUT MÓVIL - Solo en pantallas pequeñas */
+        /* LAYOUT MÓVIL ULTRA COMPACTO */
         /* ============================================ */
         @media (max-width: 768px) {
             body {
                 flex-direction: column;
-                padding: 5px;
+                padding: 3px;
             }
             
             .game-wrapper {
                 flex-direction: column;
                 width: 100%;
                 max-width: 500px;
-                gap: 5px;
+                gap: 3px;
             }
             
+            /* Panel súper compacto */
             .side-panel {
                 width: 100%;
-                padding: 8px 12px;
+                padding: 5px 8px;
                 display: grid;
                 grid-template-columns: 1fr 1fr 1fr;
-                gap: 5px;
+                gap: 3px;
                 text-align: center;
             }
             
             .game-logo {
                 grid-column: 1 / -1;
-                font-size: 18px;
-                margin-bottom: 3px;
+                font-size: 14px;
+                margin-bottom: 2px;
             }
             
-            .side-panel h2 { font-size: 10px; margin: 0; }
-            .side-panel p { font-size: 16px; }
-            .side-panel h3 { margin-top: 0; font-size: 10px; padding: 3px; }
+            .side-panel h2 {
+                font-size: 9px;
+                margin: 0;
+                color: #e94560;
+            }
             
-            .mascot { width: 40px; height: 40px; margin-top: 3px; }
+            .side-panel p {
+                font-size: 14px;
+                font-weight: bold;
+                color: #fff;
+                margin: 0;
+            }
+            
+            .side-panel h3 {
+                margin: 0;
+                font-size: 9px;
+                padding: 2px;
+                background: #e94560;
+                color: #0f3460;
+                border-radius: 3px;
+            }
+            
+            .mascot {
+                width: 30px;
+                height: 30px;
+                margin: 0;
+            }
             
             .level-bar-container {
                 grid-column: 1 / -1;
-                margin-top: 3px;
-                height: 12px;
+                margin: 2px 0;
+                height: 10px;
+                border-width: 1px;
             }
             
             .combo-counter {
                 grid-column: 1 / -1;
-                margin-top: 3px;
-                font-size: 12px;
-                min-height: 18px;
+                margin: 2px 0;
+                font-size: 11px;
+                min-height: 15px;
             }
             
-            canvas#next { width: 80px; height: 60px; margin-top: 0; }
+            canvas#next {
+                width: 60px;
+                height: 45px;
+                margin: 0 auto;
+                border-width: 1px;
+            }
             
             .music-control {
-                margin-top: 3px;
-                font-size: 11px;
-                padding: 4px;
+                margin: 0;
+                font-size: 10px;
+                padding: 3px 6px;
             }
             
             .controls { display: none; }
             
+            /* Canvas ocupa todo el espacio restante */
             .canvas-container {
                 flex: 1;
                 display: flex;
@@ -261,12 +289,14 @@
             
             .gesture-hint {
                 display: block;
+                font-size: 9px;
+                margin-top: 3px;
             }
             
             .restart-btn {
                 top: 50%;
-                font-size: 14px;
-                padding: 10px 20px;
+                font-size: 12px;
+                padding: 8px 16px;
             }
         }
     </style>
@@ -296,23 +326,13 @@
         
         <div class="combo-counter" id="comboCounter" style="grid-column: 1 / -1;"></div>
         
-        <div style="grid-column: 1 / -1;">
-            <h3>NEXT</h3>
-            <canvas id="next" width="150" height="120"></canvas>
-        </div>
-        
-        <img class="mascot" id="mascot" src="Normal.png" alt="Mascota">
-        
-        <div class="music-control" id="musicToggle">🎵 Música: ON</div>
-        
-        <div class="controls">
-            <strong>CONTROLES:</strong><br>
-            ← → Mover<br>
-            ↓ Bajar<br>
-            ↑ Rotar<br>
-            ESPACIO: Hard Drop<br>
-            M: Música ON/OFF<br>
-            R: Reiniciar
+        <div style="grid-column: 1 / -1; display: flex; justify-content: space-around; align-items: center;">
+            <img class="mascot" id="mascot" src="Normal.png" alt="Mascota">
+            <div>
+                <h3>NEXT</h3>
+                <canvas id="next" width="150" height="120"></canvas>
+            </div>
+            <div class="music-control" id="musicToggle">🎵 ON</div>
         </div>
     </div>
     
@@ -322,9 +342,8 @@
     </div>
 </div>
 
-<!-- Indicador de gestos para móvil -->
 <div class="gesture-hint">
-     Desliza para mover · Doble tap = Hard Drop
+    👆 Desliza para mover · Doble tap = Hard Drop
 </div>
 
 <audio id="bgm" loop>
@@ -379,8 +398,8 @@
     let touchStartY = 0;
     let touchStartTime = 0;
     let lastTapTime = 0;
-    const SWIPE_THRESHOLD = 30; // Píxeles mínimos para considerar swipe
-    const DOUBLE_TAP_DELAY = 300; // Milisegundos para doble tap
+    const SWIPE_THRESHOLD = 30;
+    const DOUBLE_TAP_DELAY = 300;
 
     function handleTouchStart(e) {
         e.preventDefault();
@@ -392,7 +411,16 @@
 
     function handleTouchEnd(e) {
         e.preventDefault();
-        if (gameOver) return;
+        if (gameOver) {
+            const now = Date.now();
+            if (now - lastTapTime < DOUBLE_TAP_DELAY) {
+                resetGame();
+                lastTapTime = 0;
+            } else {
+                lastTapTime = now;
+            }
+            return;
+        }
         
         const touch = e.changedTouches[0];
         const touchEndX = touch.clientX;
@@ -403,11 +431,9 @@
         const deltaY = touchEndY - touchStartY;
         const deltaTime = touchEndTime - touchStartTime;
         
-        // Detectar doble tap (poco movimiento y rápido)
         if (Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10 && deltaTime < 200) {
             const now = Date.now();
             if (now - lastTapTime < DOUBLE_TAP_DELAY) {
-                // Doble tap = Hard Drop
                 playerHardDrop();
                 lastTapTime = 0;
                 return;
@@ -416,33 +442,22 @@
             return;
         }
         
-        // Detectar swipe (movimiento significativo)
         if (deltaTime < 500 && (Math.abs(deltaX) > SWIPE_THRESHOLD || Math.abs(deltaY) > SWIPE_THRESHOLD)) {
-            // Determinar dirección dominante
             if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                // Movimiento horizontal
-                if (deltaX > 0) {
-                    playerMove(1); // Derecha
-                } else {
-                    playerMove(-1); // Izquierda
-                }
+                if (deltaX > 0) playerMove(1);
+                else playerMove(-1);
             } else {
-                // Movimiento vertical
-                if (deltaY > 0) {
-                    playerDrop(); // Abajo (soft drop)
-                } else {
-                    playerRotate(); // Arriba (rotar)
-                }
+                if (deltaY > 0) playerDrop();
+                else playerRotate();
             }
         }
     }
 
-    // Añadir listeners de gestos al canvas
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
     canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
     canvas.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
 
-    // ===== REDIMENSIONAR CANVAS SOLO EN MÓVIL =====
+    // ===== REDIMENSIONAR CANVAS =====
     function resizeCanvas() {
         if (window.innerWidth >= 768) {
             canvas.width = 300;
@@ -506,12 +521,12 @@
     function toggleMusic() {
         musicEnabled = !musicEnabled;
         if (musicEnabled && !gameOver) {
-            bgm.play().catch(e => console.log("Error al reproducir música:", e));
-            musicToggle.textContent = "🎵 Música: ON";
+            bgm.play().catch(e => console.log("Error:", e));
+            musicToggle.textContent = "🎵 ON";
             musicToggle.classList.remove('muted');
         } else {
             bgm.pause();
-            musicToggle.textContent = "🔇 Música: OFF";
+            musicToggle.textContent = " OFF";
             musicToggle.classList.add('muted');
         }
     }
@@ -796,7 +811,7 @@
             ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 2 + 10);
             ctx.fillStyle = '#00f0f0';
             ctx.font = `bold ${BLOCK_SIZE * 0.5}px Courier New`;
-            ctx.fillText('Toca dos veces para reiniciar', canvas.width / 2, canvas.height / 2 + 50);
+            ctx.fillText('Doble tap para reiniciar', canvas.width / 2, canvas.height / 2 + 50);
         }
     }
 
@@ -960,7 +975,7 @@
 
         if (musicEnabled) {
             bgm.currentTime = 0;
-            bgm.play().catch(e => console.log("Error al reproducir música:", e));
+            bgm.play().catch(e => console.log("Error:", e));
         }
 
         requestAnimationFrame(update);
@@ -1057,7 +1072,7 @@
         
         if (bgm.paused && musicEnabled && !gameOver) {
             bgm.volume = 0.3;
-            bgm.play().catch(e => console.log("Error al reproducir música:", e));
+            bgm.play().catch(e => console.log("Error:", e));
         }
         
         if (event.key === 'm' || event.key === 'M') {

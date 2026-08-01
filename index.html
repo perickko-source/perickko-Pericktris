@@ -182,22 +182,24 @@
         }
 
         /* ============================================ */
-        /* LAYOUT MÓVIL - Panel mínimo, canvas máximo */
+        /* LAYOUT MÓVIL ULTRA COMPACTO */
         /* ============================================ */
         @media (max-width: 768px) {
             body {
                 flex-direction: column;
-                padding: 2px;
+                padding: 0;
+                height: 100vh;
+                height: 100dvh;
             }
             
             .game-wrapper {
                 flex-direction: column;
                 width: 100%;
-                max-width: 500px;
-                gap: 2px;
+                height: 100%;
+                gap: 0;
             }
             
-            /* Panel mínimo - solo 2 filas */
+            /* Panel súper compacto */
             .side-panel {
                 width: 100%;
                 padding: 4px 6px;
@@ -205,28 +207,35 @@
                 grid-template-columns: 1fr 1fr 1fr;
                 gap: 2px;
                 text-align: center;
+                flex-shrink: 0;
             }
             
-            /* Ocultar logo en móvil para ganar espacio */
             .game-logo {
-                display: none;
+                grid-column: 1 / -1;
+                font-size: 13px;
+                margin-bottom: 1px;
             }
             
             .side-panel h2 {
-                font-size: 9px;
+                font-size: 8px;
                 margin: 0;
                 color: #e94560;
             }
             
             .side-panel p {
-                font-size: 14px;
+                font-size: 13px;
                 font-weight: bold;
                 color: #fff;
                 margin: 0;
             }
             
             .side-panel h3 {
-                display: none; /* Ocultar label NEXT */
+                margin: 0;
+                font-size: 8px;
+                padding: 2px;
+                background: #e94560;
+                color: #0f3460;
+                border-radius: 3px;
             }
             
             .mascot {
@@ -245,8 +254,8 @@
             .combo-counter {
                 grid-column: 1 / -1;
                 margin: 1px 0;
-                font-size: 11px;
-                min-height: 14px;
+                font-size: 10px;
+                min-height: 12px;
             }
             
             canvas#next {
@@ -258,13 +267,13 @@
             
             .music-control {
                 margin: 0;
-                font-size: 10px;
-                padding: 3px 5px;
+                font-size: 9px;
+                padding: 2px 5px;
             }
             
             .controls { display: none; }
             
-            /* Canvas ocupa TODO el espacio restante */
+            /* Canvas ocupa el espacio restante MENOS el texto de ayuda */
             .canvas-container {
                 flex: 1;
                 display: flex;
@@ -272,18 +281,22 @@
                 justify-content: center;
                 min-height: 0;
                 width: 100%;
-                padding: 0 2px;
+                overflow: hidden;
+                margin-bottom: 2px;
             }
             
             canvas#game {
-                max-width: 100%;
-                max-height: 100%;
-                border-width: 2px;
+                display: block;
                 touch-action: none;
+                max-height: 100%;
             }
             
             .gesture-hint {
-                display: none; /* Ocultar hint para ganar espacio */
+                display: block;
+                font-size: 9px;
+                padding: 2px 0;
+                flex-shrink: 0;
+                background: #1a1a2e;
             }
             
             .restart-btn {
@@ -459,30 +472,45 @@
             return;
         }
         
+        // En móvil, calcular el espacio exacto disponible
         const wrapper = document.querySelector('.canvas-container');
-        const wrapperWidth = wrapper.clientWidth;
-        const wrapperHeight = wrapper.clientHeight;
+        const wrapperRect = wrapper.getBoundingClientRect();
+        const hintHeight = document.querySelector('.gesture-hint').offsetHeight || 20;
         
-        // Usar casi todo el espacio disponible (solo 4px de margen)
-        const maxWidth = wrapperWidth - 4;
-        const maxHeight = wrapperHeight - 4;
+        // Espacio disponible exacto (restando el texto de ayuda)
+        const availableWidth = wrapperRect.width;
+        const availableHeight = wrapperRect.height - hintHeight - 4;
+        
+        // Calcular tamaño manteniendo proporción 1:2
+        const margin = 4;
+        const maxWidth = availableWidth - margin;
+        const maxHeight = availableHeight - margin;
         
         let newWidth = maxWidth;
         let newHeight = newWidth * 2;
         
+        // Si la altura excede el espacio disponible, ajustar por altura
         if (newHeight > maxHeight) {
             newHeight = maxHeight;
             newWidth = newHeight / 2;
         }
         
+        // Asegurar tamaños mínimos
         if (newWidth < 150) newWidth = 150;
         if (newHeight < 300) newHeight = 300;
         
+        // Aplicar dimensiones al canvas
         canvas.width = newWidth;
         canvas.height = newHeight;
+        
+        // Calcular BLOCK_SIZE
         BLOCK_SIZE = newWidth / COLS;
     }
 
+    // Llamar al cargar y en resize
+    window.addEventListener('load', () => {
+        setTimeout(resizeCanvas, 100);
+    });
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
@@ -516,7 +544,7 @@
         musicEnabled = !musicEnabled;
         if (musicEnabled && !gameOver) {
             bgm.play().catch(e => console.log("Error:", e));
-            musicToggle.textContent = "🎵 ON";
+            musicToggle.textContent = " ON";
             musicToggle.classList.remove('muted');
         } else {
             bgm.pause();

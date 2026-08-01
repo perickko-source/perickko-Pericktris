@@ -187,40 +187,43 @@
         @media (max-width: 768px) {
             body {
                 flex-direction: column;
-                padding: 3px;
+                padding: 0;
+                height: 100vh;
+                height: 100dvh; /* Dynamic viewport height para móviles */
             }
             
             .game-wrapper {
                 flex-direction: column;
                 width: 100%;
-                max-width: 500px;
-                gap: 3px;
+                height: 100%;
+                gap: 0;
             }
             
             /* Panel súper compacto */
             .side-panel {
                 width: 100%;
-                padding: 5px 8px;
+                padding: 4px 6px;
                 display: grid;
                 grid-template-columns: 1fr 1fr 1fr;
-                gap: 3px;
+                gap: 2px;
                 text-align: center;
+                flex-shrink: 0;
             }
             
             .game-logo {
                 grid-column: 1 / -1;
-                font-size: 14px;
-                margin-bottom: 2px;
+                font-size: 13px;
+                margin-bottom: 1px;
             }
             
             .side-panel h2 {
-                font-size: 9px;
+                font-size: 8px;
                 margin: 0;
                 color: #e94560;
             }
             
             .side-panel p {
-                font-size: 14px;
+                font-size: 13px;
                 font-weight: bold;
                 color: #fff;
                 margin: 0;
@@ -228,7 +231,7 @@
             
             .side-panel h3 {
                 margin: 0;
-                font-size: 9px;
+                font-size: 8px;
                 padding: 2px;
                 background: #e94560;
                 color: #0f3460;
@@ -236,36 +239,36 @@
             }
             
             .mascot {
-                width: 30px;
-                height: 30px;
+                width: 28px;
+                height: 28px;
                 margin: 0;
             }
             
             .level-bar-container {
                 grid-column: 1 / -1;
-                margin: 2px 0;
-                height: 10px;
+                margin: 1px 0;
+                height: 8px;
                 border-width: 1px;
             }
             
             .combo-counter {
                 grid-column: 1 / -1;
-                margin: 2px 0;
-                font-size: 11px;
-                min-height: 15px;
+                margin: 1px 0;
+                font-size: 10px;
+                min-height: 12px;
             }
             
             canvas#next {
-                width: 60px;
-                height: 45px;
+                width: 55px;
+                height: 40px;
                 margin: 0 auto;
                 border-width: 1px;
             }
             
             .music-control {
                 margin: 0;
-                font-size: 10px;
-                padding: 3px 6px;
+                font-size: 9px;
+                padding: 2px 5px;
             }
             
             .controls { display: none; }
@@ -278,19 +281,19 @@
                 justify-content: center;
                 min-height: 0;
                 width: 100%;
+                overflow: hidden;
             }
             
             canvas#game {
-                max-width: 100%;
-                max-height: 100%;
-                border-width: 2px;
+                display: block;
                 touch-action: none;
             }
             
             .gesture-hint {
                 display: block;
-                font-size: 9px;
-                margin-top: 3px;
+                font-size: 8px;
+                margin-top: 2px;
+                flex-shrink: 0;
             }
             
             .restart-btn {
@@ -466,29 +469,45 @@
             return;
         }
         
+        // En móvil, calcular el espacio exacto disponible
         const wrapper = document.querySelector('.canvas-container');
-        const wrapperWidth = wrapper.clientWidth;
-        const wrapperHeight = wrapper.clientHeight;
+        const wrapperRect = wrapper.getBoundingClientRect();
         
-        const maxWidth = wrapperWidth - 10;
-        const maxHeight = wrapperHeight - 10;
+        // Espacio disponible exacto
+        const availableWidth = wrapperRect.width;
+        const availableHeight = wrapperRect.height;
+        
+        // Calcular tamaño manteniendo proporción 1:2
+        // Dejar un pequeño margen de 4px
+        const margin = 4;
+        const maxWidth = availableWidth - margin;
+        const maxHeight = availableHeight - margin;
         
         let newWidth = maxWidth;
         let newHeight = newWidth * 2;
         
+        // Si la altura excede el espacio disponible, ajustar por altura
         if (newHeight > maxHeight) {
             newHeight = maxHeight;
             newWidth = newHeight / 2;
         }
         
+        // Asegurar tamaños mínimos
         if (newWidth < 150) newWidth = 150;
         if (newHeight < 300) newHeight = 300;
         
+        // Aplicar dimensiones al canvas
         canvas.width = newWidth;
         canvas.height = newHeight;
+        
+        // Calcular BLOCK_SIZE
         BLOCK_SIZE = newWidth / COLS;
     }
 
+    // Llamar al cargar y en resize
+    window.addEventListener('load', () => {
+        setTimeout(resizeCanvas, 100); // Pequeño delay para asegurar que el layout está listo
+    });
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 

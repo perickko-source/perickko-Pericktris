@@ -173,9 +173,14 @@
             line-height: 1.6;
         }
 
-        /* Controles táctiles - OCULTOS en desktop */
-        .touch-controls {
+        /* Indicador de gestos - solo visible en móvil */
+        .gesture-hint {
             display: none;
+            text-align: center;
+            font-size: 10px;
+            color: #888;
+            margin-top: 5px;
+            line-height: 1.4;
         }
 
         /* ============================================ */
@@ -194,7 +199,6 @@
                 gap: 5px;
             }
             
-            /* Panel superior compacto en móvil */
             .side-panel {
                 width: 100%;
                 padding: 8px 12px;
@@ -210,26 +214,11 @@
                 margin-bottom: 3px;
             }
             
-            .side-panel h2 {
-                font-size: 10px;
-                margin: 0;
-            }
+            .side-panel h2 { font-size: 10px; margin: 0; }
+            .side-panel p { font-size: 16px; }
+            .side-panel h3 { margin-top: 0; font-size: 10px; padding: 3px; }
             
-            .side-panel p {
-                font-size: 16px;
-            }
-            
-            .side-panel h3 {
-                margin-top: 0;
-                font-size: 10px;
-                padding: 3px;
-            }
-            
-            .mascot {
-                width: 40px;
-                height: 40px;
-                margin-top: 3px;
-            }
+            .mascot { width: 40px; height: 40px; margin-top: 3px; }
             
             .level-bar-container {
                 grid-column: 1 / -1;
@@ -244,11 +233,7 @@
                 min-height: 18px;
             }
             
-            canvas#next {
-                width: 80px;
-                height: 60px;
-                margin-top: 0;
-            }
+            canvas#next { width: 80px; height: 60px; margin-top: 0; }
             
             .music-control {
                 margin-top: 3px;
@@ -256,11 +241,8 @@
                 padding: 4px;
             }
             
-            .controls {
-                display: none;
-            }
+            .controls { display: none; }
             
-            /* Canvas se redimensiona en móvil */
             .canvas-container {
                 flex: 1;
                 display: flex;
@@ -274,59 +256,11 @@
                 max-width: 100%;
                 max-height: 100%;
                 border-width: 2px;
+                touch-action: none;
             }
             
-            /* Mostrar controles táctiles en móvil */
-            .touch-controls {
+            .gesture-hint {
                 display: block;
-                width: 100%;
-                max-width: 320px;
-                padding: 5px;
-                flex-shrink: 0;
-            }
-            
-            .touch-row {
-                display: flex;
-                justify-content: center;
-                gap: 8px;
-                margin-bottom: 6px;
-            }
-            
-            .touch-btn {
-                background: #16213e;
-                border: 2px solid #0f3460;
-                border-radius: 10px;
-                color: #fff;
-                font-size: 20px;
-                font-weight: bold;
-                font-family: 'Courier New', monospace;
-                width: 60px;
-                height: 55px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                cursor: pointer;
-                box-shadow: 0 3px 0 #0a0a1a;
-            }
-            
-            .touch-btn:active {
-                transform: translateY(3px);
-                box-shadow: 0 0 0 #0a0a1a;
-                background: #e94560;
-            }
-            
-            .touch-btn.hard-drop {
-                width: 130px;
-                background: #e94560;
-                border-color: #ff6b81;
-                font-size: 13px;
-                height: 50px;
-            }
-            
-            .touch-btn.small {
-                width: 45px;
-                height: 45px;
-                font-size: 16px;
             }
             
             .restart-btn {
@@ -388,20 +322,9 @@
     </div>
 </div>
 
-<!-- Controles táctiles - solo visibles en móvil -->
-<div class="touch-controls">
-    <div class="touch-row">
-        <button class="touch-btn small" id="btnRotate">↻</button>
-        <button class="touch-btn small" id="btnMusic"></button>
-    </div>
-    <div class="touch-row">
-        <button class="touch-btn" id="btnLeft">←</button>
-        <button class="touch-btn" id="btnDown">↓</button>
-        <button class="touch-btn" id="btnRight">→</button>
-    </div>
-    <div class="touch-row">
-        <button class="touch-btn hard-drop" id="btnHardDrop">HARD DROP</button>
-    </div>
+<!-- Indicador de gestos para móvil -->
+<div class="gesture-hint">
+     Desliza para mover · Doble tap = Hard Drop
 </div>
 
 <audio id="bgm" loop>
@@ -420,12 +343,10 @@
     const comboCounter = document.getElementById('comboCounter');
     const mascot = document.getElementById('mascot');
     
-    // Dimensiones lógicas del juego
     const COLS = 10;
     const ROWS = 20;
     const LOGICAL_BLOCK_SIZE = 30;
     
-    // BLOCK_SIZE se ajusta dinámicamente en móvil
     let BLOCK_SIZE = LOGICAL_BLOCK_SIZE;
 
     const COLORS = ['transparent', '#00f0f0', '#f0f000', '#a000f0', '#00f000', '#f00000', '#0000f0', '#f0a000'];
@@ -453,23 +374,87 @@
     
     let trails = [];
 
+    // ===== SISTEMA DE GESTOS TÁCTILES =====
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStartTime = 0;
+    let lastTapTime = 0;
+    const SWIPE_THRESHOLD = 30; // Píxeles mínimos para considerar swipe
+    const DOUBLE_TAP_DELAY = 300; // Milisegundos para doble tap
+
+    function handleTouchStart(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+        touchStartTime = Date.now();
+    }
+
+    function handleTouchEnd(e) {
+        e.preventDefault();
+        if (gameOver) return;
+        
+        const touch = e.changedTouches[0];
+        const touchEndX = touch.clientX;
+        const touchEndY = touch.clientY;
+        const touchEndTime = Date.now();
+        
+        const deltaX = touchEndX - touchStartX;
+        const deltaY = touchEndY - touchStartY;
+        const deltaTime = touchEndTime - touchStartTime;
+        
+        // Detectar doble tap (poco movimiento y rápido)
+        if (Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10 && deltaTime < 200) {
+            const now = Date.now();
+            if (now - lastTapTime < DOUBLE_TAP_DELAY) {
+                // Doble tap = Hard Drop
+                playerHardDrop();
+                lastTapTime = 0;
+                return;
+            }
+            lastTapTime = now;
+            return;
+        }
+        
+        // Detectar swipe (movimiento significativo)
+        if (deltaTime < 500 && (Math.abs(deltaX) > SWIPE_THRESHOLD || Math.abs(deltaY) > SWIPE_THRESHOLD)) {
+            // Determinar dirección dominante
+            if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                // Movimiento horizontal
+                if (deltaX > 0) {
+                    playerMove(1); // Derecha
+                } else {
+                    playerMove(-1); // Izquierda
+                }
+            } else {
+                // Movimiento vertical
+                if (deltaY > 0) {
+                    playerDrop(); // Abajo (soft drop)
+                } else {
+                    playerRotate(); // Arriba (rotar)
+                }
+            }
+        }
+    }
+
+    // Añadir listeners de gestos al canvas
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+    canvas.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+
     // ===== REDIMENSIONAR CANVAS SOLO EN MÓVIL =====
     function resizeCanvas() {
-        // Solo redimensionar si estamos en móvil (ancho < 768px)
         if (window.innerWidth >= 768) {
-            // En desktop, mantener tamaño original
             canvas.width = 300;
             canvas.height = 600;
             BLOCK_SIZE = LOGICAL_BLOCK_SIZE;
             return;
         }
         
-        // En móvil, calcular espacio disponible
         const wrapper = document.querySelector('.canvas-container');
         const wrapperWidth = wrapper.clientWidth;
         const wrapperHeight = wrapper.clientHeight;
         
-        // Calcular el tamaño máximo manteniendo proporción 1:2
         const maxWidth = wrapperWidth - 10;
         const maxHeight = wrapperHeight - 10;
         
@@ -481,18 +466,14 @@
             newWidth = newHeight / 2;
         }
         
-        // Asegurar que no sea demasiado pequeño
         if (newWidth < 150) newWidth = 150;
         if (newHeight < 300) newHeight = 300;
         
         canvas.width = newWidth;
         canvas.height = newHeight;
-        
-        // Calcular BLOCK_SIZE basado en el nuevo ancho
         BLOCK_SIZE = newWidth / COLS;
     }
 
-    // Llamar al redimensionar y en cambios de tamaño
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
@@ -815,7 +796,7 @@
             ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 2 + 10);
             ctx.fillStyle = '#00f0f0';
             ctx.font = `bold ${BLOCK_SIZE * 0.5}px Courier New`;
-            ctx.fillText('Presiona R o haz clic', canvas.width / 2, canvas.height / 2 + 50);
+            ctx.fillText('Toca dos veces para reiniciar', canvas.width / 2, canvas.height / 2 + 50);
         }
     }
 
@@ -1103,30 +1084,6 @@
             playerHardDrop();
         }
     });
-
-    function addTouchControl(btnId, action) {
-        const btn = document.getElementById(btnId);
-        if (!btn) return;
-        
-        btn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            initAudio();
-            action();
-        }, { passive: false });
-        
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            initAudio();
-            action();
-        });
-    }
-
-    addTouchControl('btnLeft', () => { if (!gameOver) playerMove(-1); });
-    addTouchControl('btnRight', () => { if (!gameOver) playerMove(1); });
-    addTouchControl('btnDown', () => { if (!gameOver) playerDrop(); });
-    addTouchControl('btnRotate', () => { if (!gameOver) playerRotate(); });
-    addTouchControl('btnHardDrop', () => { if (!gameOver) playerHardDrop(); });
-    addTouchControl('btnMusic', () => { toggleMusic(); });
 
     musicToggle.addEventListener('click', () => {
         initAudio();
